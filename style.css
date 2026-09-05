@@ -1,0 +1,505 @@
+* {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    user-select: none;
+}
+
+body {
+    background: #14110f;
+    color: #f4ebd9;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    min-height: 100vh;
+    overflow-x: hidden;
+}
+
+#app {
+    width: 100%;
+    max-width: 1200px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    padding: 20px;
+}
+
+.hidden {
+    display: none !important;
+}
+
+/* СТИЛИ ГЛАВНОГО МЕНЮ (КАК НА КАРТИНКЕ) */
+.menu-container {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    width: 100%;
+    max-width: 450px;
+}
+
+.menu-card {
+    background: linear-gradient(145deg, #231b15, #1a130e);
+    border: 2px solid #d4af37;
+    border-radius: 20px;
+    padding: 40px 30px;
+    width: 100%;
+    text-align: center;
+    box-shadow: 0 15px 35px rgba(0,0,0,0.7), inset 0 0 15px rgba(212,175,55,0.2);
+}
+
+.menu-title {
+    color: #e5a93c;
+    font-size: 24px;
+    font-weight: 800;
+    letter-spacing: 1.5px;
+    margin-bottom: 5px;
+    text-transform: uppercase;
+    text-shadow: 0 2px 4px rgba(0,0,0,0.5);
+}
+
+.info-trigger {
+    color: #5bc0de;
+    font-size: 13px;
+    font-weight: bold;
+    cursor: pointer;
+    margin-bottom: 35px;
+    text-decoration: underline;
+    transition: color 0.2s;
+}
+
+.info-trigger:hover {
+    color: #31b0d5;
+}
+
+.menu-btn {
+    width: 100%;
+    padding: 16px;
+    font-size: 15px;
+    font-weight: 700;
+    border-radius: 12px;
+    border: none;
+    cursor: pointer;
+    margin-bottom: 16px;
+    transition: all 0.2s ease;
+    text-transform: uppercase;
+    box-shadow: 0 4px 6px rgba(0,0,0,0.3);
+}
+
+.primary-btn {
+    background: linear-gradient(to bottom, #f3b137, #c78311);
+    color: #110c08;
+    border: 1px solid #ffcc66;
+}
+
+.primary-btn:hover {
+    background: linear-gradient(to bottom, #ffc04d, #db941a);
+    transform: translateY(-2px);
+}
+
+.secondary-btn {
+    background: linear-gradient(to bottom, #e5973c, #b06611);
+    color: #ffffff;
+    border: 1px solid #fca33d;
+}
+
+.secondary-btn:hover {
+    background: linear-gradient(to bottom, #f2a64b, #c47519);
+    transform: translateY(-2px);
+}
+
+.input-group {
+    margin-top: 25px;
+    margin-bottom: 12px;
+}
+
+.input-group input {
+    width: 100%;
+    padding: 16px;
+    border-radius: 12px;
+    border: 1px solid #4a3b32;
+    background: #110d0a;
+    color: #f4ebd9;
+    text-align: center;
+    font-size: 16px;
+    font-weight: bold;
+    letter-spacing: 4px;
+}
+
+.input-group input::placeholder {
+    letter-spacing: 1px;
+    font-size: 13px;
+    color: #705b4e;
+}
+
+.action-btn {
+    background: linear-gradient(to bottom, #3a322d, #241e1a);
+    color: #f4ebd9;
+    border: 1px solid #5a4b40;
+}
+
+.action-btn:hover {
+    background: linear-gradient(to bottom, #4a403a, #2f2722);
+    border-color: #d4af37;
+}
+
+.rule-btn {
+    background: linear-gradient(to bottom, #2b221a, #1a1410);
+    color: #a69285;
+    border: 1px solid #3d3127;
+    margin-top: 20px;
+    margin-bottom: 0;
+}
+
+/* МОДАЛЬНОЕ ОКНО (КАК НА КАРТИНКЕ) */
+.popup-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100vw;
+    height: 100vh;
+    background: rgba(0,0,0,0.85);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    z-index: 1000;
+}
+
+.popup-card {
+    background: #1c1815;
+    border: 1px solid #e5a93c;
+    border-radius: 16px;
+    width: 90%;
+    max-width: 440px;
+    padding: 35px 25px;
+    text-align: center;
+    position: relative;
+    box-shadow: 0 20px 40px rgba(0,0,0,0.9);
+}
+
+.popup-close {
+    position: absolute;
+    top: 15px;
+    right: 20px;
+    font-size: 26px;
+    color: #705b4e;
+    cursor: pointer;
+    transition: color 0.2s;
+}
+
+.popup-close:hover {
+    color: #e5a93c;
+}
+
+.popup-icons {
+    color: #e5a93c;
+    font-size: 16px;
+    letter-spacing: 6px;
+    margin-bottom: 15px;
+}
+
+.popup-title {
+    color: #e5a93c;
+    font-size: 22px;
+    font-weight: bold;
+    letter-spacing: 1px;
+    margin-bottom: 5px;
+}
+
+.popup-subtitle {
+    color: #8c7667;
+    font-size: 12px;
+    margin-bottom: 25px;
+    text-transform: uppercase;
+}
+
+.popup-text {
+    font-size: 14px;
+    line-height: 1.6;
+    color: #d1c2b6;
+    margin-bottom: 30px;
+}
+
+.popup-features {
+    display: flex;
+    justify-content: space-between;
+    gap: 8px;
+    margin-bottom: 30px;
+}
+
+.feature-badge {
+    background: #26201b;
+    border: 1px solid #42362e;
+    border-radius: 20px;
+    padding: 8px 12px;
+    font-size: 11px;
+    color: #e5a93c;
+    flex: 1;
+    white-space: nowrap;
+}
+
+.popup-footer {
+    font-size: 10px;
+    color: #54443a;
+}
+
+/* ИГРОВОЙ СТОЛ И ДОСКА */
+#game-table {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    width: 100%;
+}
+
+.game-header {
+    width: 100%;
+    max-width: 900px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 15px 25px;
+    background: #1c1612;
+    border-radius: 12px;
+    margin-bottom: 15px;
+    border: 1px solid #362a22;
+}
+
+.player-info {
+    font-weight: bold;
+    font-size: 16px;
+    padding: 6px 14px;
+    border-radius: 6px;
+}
+
+#player-white-info { background: #ffffff; color: #000000; }
+#player-black-info { background: #333333; color: #ffffff; border: 1px solid #555; }
+
+#game-status-text {
+    font-size: 16px;
+    color: #e5a93c;
+    font-weight: bold;
+}
+
+.board-wrapper {
+    display: flex;
+    gap: 20px;
+    width: 100%;
+    max-width: 1050px;
+}
+
+.board-container {
+    background: radial-gradient(circle, #3a2a1d 0%, #1f140b 100%);
+    border: 12px solid #54371f;
+    border-radius: 8px;
+    box-shadow: 0 15px 30px rgba(0,0,0,0.6);
+    display: flex;
+    flex-direction: column;
+    width: 850px;
+    height: 520px;
+    position: relative;
+}
+
+.board-row {
+    display: flex;
+    height: 210px;
+    width: 100%;
+}
+
+.top-row { align-items: flex-start; }
+.bottom-row { align-items: flex-end; }
+
+.board-cell {
+    flex: 1;
+    height: 100%;
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    cursor: pointer;
+    transition: background 0.2s;
+}
+
+/* Отрисовка треугольников треугольников на доске */
+.top-row .board-cell:nth-child(odd) { background: rgba(255,255,255,0.03); }
+.top-row .board-cell:nth-child(even) { background: rgba(0,0,0,0.15); }
+.bottom-row .board-cell:nth-child(odd) { background: rgba(0,0,0,0.15); }
+.bottom-row .board-cell:nth-child(even) { background: rgba(255,255,255,0.03); }
+
+/* Декоративные внутренние стрелки классических нард */
+.board-cell::before {
+    content: '';
+    position: absolute;
+    width: 0;
+    height: 0;
+    border-left: 15px solid transparent;
+    border-right: 15px solid transparent;
+    opacity: 0.15;
+}
+.top-row .board-cell::before {
+    top: 0;
+    border-top: 140px solid #e5a93c;
+}
+.bottom-row .board-cell::before {
+    bottom: 0;
+    border-bottom: 140px solid #e5a93c;
+}
+
+/* Разделительный бортик по центру (Бар) */
+.board-bar {
+    width: 24px;
+    height: 100%;
+    background: #422a18;
+    box-shadow: inset 2px 0 5px rgba(0,0,0,0.5), inset -2px 0 5px rgba(0,0,0,0.5);
+}
+
+/* Центральная зона для кубиков */
+.board-center-panel {
+    height: 76px;
+    background: rgba(0, 0, 0, 0.2);
+    border-top: 2px solid #422a18;
+    border-bottom: 2px solid #422a18;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 30px;
+    padding: 0 20px;
+}
+
+.dice-zone {
+    display: flex;
+    gap: 15px;
+}
+
+.dice-box {
+    width: 44px;
+    height: 44px;
+    background: #f4ebd9;
+    color: #110d0a;
+    border-radius: 8px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    font-size: 22px;
+    font-weight: 900;
+    box-shadow: 0 4px 8px rgba(0,0,0,0.4);
+    transition: transform 0.4s ease, opacity 0.2s;
+}
+
+.dice-box.used {
+    opacity: 0.35;
+    transform: scale(0.9);
+}
+
+/* СТИЛИ ШАШЕК */
+.checker {
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    margin: 2px 0;
+    position: relative;
+    box-shadow: 0 4px 6px rgba(0,0,0,0.4), inset 0 2px 4px rgba(255,255,255,0.2);
+    transition: transform 0.15s;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
+.checker.white-checker {
+    background: radial-gradient(circle, #ffffff 60%, #cccccc 100%);
+    border: 2px solid #b3b3b3;
+}
+
+.checker.black-checker {
+    background: radial-gradient(circle, #3a3a3a 60%, #1a1a1a 100%);
+    border: 2px solid #444444;
+}
+
+/* Наложение стопки шашек друг на друга при большом количестве */
+.top-row .board-cell { flex-direction: column; justify-content: flex-start; padding-top: 5px; }
+.bottom-row .board-cell { flex-direction: column-reverse; justify-content: flex-start; padding-bottom: 5px; }
+
+/* Компактный вид для стопки (более 5 шашек) */
+.board-cell.stacked .checker {
+    margin-bottom: -32px;
+}
+.bottom-row .board-cell.stacked .checker {
+    margin-top: -32px;
+    margin-bottom: 2px;
+}
+
+/* Цифровой счетчик стопки */
+.stack-count {
+    position: absolute;
+    background: #e5a93c;
+    color: #000;
+    font-size: 11px;
+    font-weight: 900;
+    padding: 2px 5px;
+    border-radius: 8px;
+    z-index: 10;
+}
+.top-row .stack-count { bottom: 10px; }
+.bottom-row .stack-count { top: 10px; }
+
+/* Подсветка ходов */
+.board-cell.selectable {
+    box-shadow: inset 0 0 12px #5bc0de;
+}
+.board-cell.targetable {
+    box-shadow: inset 0 0 15px #e5a93c;
+    background: rgba(229, 169, 60, 0.1) !important;
+}
+
+/* ЗОНЫ СБРОСА ДОМА */
+.bearoff-container {
+    display: flex;
+    flex-direction: column;
+    gap: 15px;
+    width: 160px;
+}
+
+.bearoff-zone {
+    flex: 1;
+    background: #211a14;
+    border: 2px dashed #4a3b32;
+    border-radius: 8px;
+    padding: 12px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.bearoff-zone.active-home {
+    border-color: #e5a93c;
+    background: rgba(229, 169, 60, 0.05);
+}
+
+.bearoff-title {
+    font-size: 11px;
+    font-weight: bold;
+    color: #8c7667;
+    margin-bottom: 10px;
+    text-align: center;
+}
+
+.bearoff-slots {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 4px;
+    justify-content: center;
+    width: 100%;
+}
+
+.bearoff-slots .checker {
+    width: 24px;
+    height: 24px;
+    border-width: 1px;
+}
+
+.room-display {
+    margin-top: 10px;
+    font-size: 14px;
+    color: #8c7667;
+}
