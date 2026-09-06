@@ -3,12 +3,11 @@
     margin: 0;
     padding: 0;
     font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-    user-select: none;
 }
 
 body {
-    background: #14110f;
-    color: #f4ebd9;
+    background: #11141a;
+    color: #f0f3f8;
     display: flex;
     justify-content: center;
     align-items: center;
@@ -16,301 +15,277 @@ body {
     overflow-x: hidden;
 }
 
-#app {
-    width: 100%;
-    max-width: 1200px;
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    padding: 20px;
-}
-
 .hidden {
     display: none !important;
 }
 
-/* СТИЛИ ГЛАВНОГО МЕНЮ (КАК НА КАРТИНКЕ) */
+/* Главное Меню SANI GROUP */
 .menu-container {
-    display: flex;
-    justify-content: center;
-    align-items: center;
     width: 100%;
-    max-width: 450px;
-}
-
-.menu-card {
-    background: linear-gradient(145deg, #231b15, #1a130e);
-    border: 2px solid #d4af37;
-    border-radius: 20px;
+    max-width: 480px;
+    background: linear-gradient(145deg, #1a1f29, #13171f);
+    border: 2px solid #c39b4f;
+    border-radius: 16px;
     padding: 40px 30px;
-    width: 100%;
+    box-shadow: 0 15px 35px rgba(0,0,0,0.6), 0 0 20px rgba(195,155,79,0.1);
     text-align: center;
-    box-shadow: 0 15px 35px rgba(0,0,0,0.7), inset 0 0 15px rgba(212,175,55,0.2);
 }
 
-.menu-title {
-    color: #e5a93c;
-    font-size: 24px;
+.studio-title {
+    font-size: 3rem;
     font-weight: 800;
-    letter-spacing: 1.5px;
+    letter-spacing: 4px;
+    background: linear-gradient(45deg, #ffe0a3, #c39b4f, #8e6824);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
     margin-bottom: 5px;
-    text-transform: uppercase;
-    text-shadow: 0 2px 4px rgba(0,0,0,0.5);
+    text-shadow: 0 4px 10px rgba(0,0,0,0.4);
 }
 
-.info-trigger {
-    color: #5bc0de;
-    font-size: 13px;
-    font-weight: bold;
-    cursor: pointer;
-    margin-bottom: 35px;
-    text-decoration: underline;
-    transition: color 0.2s;
+.studio-subtitle {
+    font-size: 0.9rem;
+    color: #a0aab8;
+    letter-spacing: 3px;
+    margin-bottom: 40px;
 }
 
-.info-trigger:hover {
-    color: #31b0d5;
+.menu-buttons {
+    display: flex;
+    flex-direction: column;
+    gap: 15px;
 }
 
 .menu-btn {
     width: 100%;
-    padding: 16px;
-    font-size: 15px;
-    font-weight: 700;
-    border-radius: 12px;
+    padding: 14px 20px;
+    font-size: 1rem;
+    font-weight: 600;
     border: none;
+    border-radius: 8px;
     cursor: pointer;
-    margin-bottom: 16px;
-    transition: all 0.2s ease;
-    text-transform: uppercase;
-    box-shadow: 0 4px 6px rgba(0,0,0,0.3);
+    transition: all 0.3s ease;
 }
 
 .primary-btn {
-    background: linear-gradient(to bottom, #f3b137, #c78311);
-    color: #110c08;
-    border: 1px solid #ffcc66;
+    background: linear-gradient(90deg, #c39b4f, #e5ba6b);
+    color: #11141a;
+    box-shadow: 0 4px 15px rgba(195,155,79,0.3);
 }
 
 .primary-btn:hover {
-    background: linear-gradient(to bottom, #ffc04d, #db941a);
     transform: translateY(-2px);
+    box-shadow: 0 6px 20px rgba(195,155,79,0.5);
 }
 
 .secondary-btn {
-    background: linear-gradient(to bottom, #e5973c, #b06611);
-    color: #ffffff;
-    border: 1px solid #fca33d;
+    background: transparent;
+    border: 2px solid #c39b4f;
+    color: #e5ba6b;
 }
 
 .secondary-btn:hover {
-    background: linear-gradient(to bottom, #f2a64b, #c47519);
+    background: rgba(195,155,79,0.1);
     transform: translateY(-2px);
 }
 
-.input-group {
-    margin-top: 25px;
-    margin-bottom: 12px;
-}
-
-.input-group input {
+.online-join-container {
+    display: flex;
+    gap: 10px;
     width: 100%;
-    padding: 16px;
-    border-radius: 12px;
-    border: 1px solid #4a3b32;
-    background: #110d0a;
-    color: #f4ebd9;
+}
+
+#join-code-input {
+    flex: 1;
+    background: #202733;
+    border: 1px solid #3b485c;
+    border-radius: 8px;
+    padding: 10px;
+    color: #fff;
+    font-size: 1.1rem;
     text-align: center;
-    font-size: 16px;
-    font-weight: bold;
-    letter-spacing: 4px;
+    letter-spacing: 2px;
 }
 
-.input-group input::placeholder {
-    letter-spacing: 1px;
-    font-size: 13px;
-    color: #705b4e;
+#join-code-input:focus {
+    border-color: #c39b4f;
+    outline: none;
 }
 
-.action-btn {
-    background: linear-gradient(to bottom, #3a322d, #241e1a);
-    color: #f4ebd9;
-    border: 1px solid #5a4b40;
+.accent-btn {
+    background: #2d62bf;
+    color: white;
+    width: 120px;
 }
 
-.action-btn:hover {
-    background: linear-gradient(to bottom, #4a403a, #2f2722);
-    border-color: #d4af37;
+.accent-btn:hover {
+    background: #3b75df;
 }
 
-.rule-btn {
-    background: linear-gradient(to bottom, #2b221a, #1a1410);
-    color: #a69285;
-    border: 1px solid #3d3127;
-    margin-top: 20px;
-    margin-bottom: 0;
+.info-btn {
+    background: #202733;
+    color: #a0aab8;
+    font-size: 0.9rem;
+    margin-top: 15px;
 }
 
-/* МОДАЛЬНОЕ ОКНО (КАК НА КАРТИНКЕ) */
-.popup-overlay {
+/* Модальное окно */
+.modal-overlay {
     position: fixed;
-    top: 0;
-    left: 0;
-    width: 100vw;
-    height: 100vh;
-    background: rgba(0,0,0,0.85);
+    top: 0; left: 0; width: 100%; height: 100%;
+    background: rgba(0,0,0,0.8);
     display: flex;
     justify-content: center;
     align-items: center;
     z-index: 1000;
 }
 
-.popup-card {
-    background: #1c1815;
-    border: 1px solid #e5a93c;
-    border-radius: 16px;
+.modal-box {
+    background: #1a1f29;
+    border: 2px solid #c39b4f;
+    border-radius: 12px;
     width: 90%;
     max-width: 440px;
-    padding: 35px 25px;
-    text-align: center;
+    padding: 30px;
     position: relative;
-    box-shadow: 0 20px 40px rgba(0,0,0,0.9);
+    box-shadow: 0 10px 30px rgba(0,0,0,0.7);
 }
 
-.popup-close {
+.close-cross {
     position: absolute;
-    top: 15px;
-    right: 20px;
-    font-size: 26px;
-    color: #705b4e;
+    top: 15px; right: 20px;
+    font-size: 1.8rem;
+    color: #a0aab8;
     cursor: pointer;
-    transition: color 0.2s;
 }
 
-.popup-close:hover {
-    color: #e5a93c;
-}
+.close-cross:hover { color: #fff; }
 
-.popup-icons {
-    color: #e5a93c;
-    font-size: 16px;
-    letter-spacing: 6px;
-    margin-bottom: 15px;
-}
-
-.popup-title {
-    color: #e5a93c;
-    font-size: 22px;
-    font-weight: bold;
+.modal-box h2 {
+    color: #e5ba6b;
+    margin-bottom: 20px;
+    font-size: 1.4rem;
     letter-spacing: 1px;
-    margin-bottom: 5px;
 }
 
-.popup-subtitle {
-    color: #8c7667;
-    font-size: 12px;
-    margin-bottom: 25px;
-    text-transform: uppercase;
+.modal-scroll-content {
+    text-align: left;
+    max-height: 300px;
+    overflow-y: auto;
+    padding-right: 5px;
 }
 
-.popup-text {
-    font-size: 14px;
-    line-height: 1.6;
-    color: #d1c2b6;
-    margin-bottom: 30px;
-}
+.modal-scroll-content h3 { color: #fff; margin-bottom: 10px; font-size: 1rem;}
 
-.popup-features {
+.modal-scroll-content ul {
+    list-style: none;
     display: flex;
-    justify-content: space-between;
-    gap: 8px;
-    margin-bottom: 30px;
+    flex-direction: column;
+    gap: 12px;
 }
 
-.feature-badge {
-    background: #26201b;
-    border: 1px solid #42362e;
-    border-radius: 20px;
-    padding: 8px 12px;
-    font-size: 11px;
-    color: #e5a93c;
-    flex: 1;
-    white-space: nowrap;
+.modal-scroll-content li {
+    font-size: 0.9rem;
+    line-height: 1.4;
+    color: #c9d1dc;
 }
 
-.popup-footer {
-    font-size: 10px;
-    color: #54443a;
+.modal-footer-text {
+    margin-top: 20px;
+    font-size: 0.8rem;
+    color: #6c7a8c;
+    text-align: center;
 }
 
-/* ИГРОВОЙ СТОЛ И ДОСКА */
-#game-table {
+/* Экран игры */
+.game-container {
     display: flex;
     flex-direction: column;
     align-items: center;
+    gap: 15px;
     width: 100%;
+    max-width: 1000px;
+    padding: 10px;
 }
 
 .game-header {
-    width: 100%;
-    max-width: 900px;
     display: flex;
     justify-content: space-between;
     align-items: center;
-    padding: 15px 25px;
-    background: #1c1612;
-    border-radius: 12px;
-    margin-bottom: 15px;
-    border: 1px solid #362a22;
+    width: 100%;
+    background: #1a1f29;
+    padding: 12px 20px;
+    border-radius: 10px;
+    border: 1px solid #2e3846;
 }
 
-.player-info {
-    font-weight: bold;
-    font-size: 16px;
-    padding: 6px 14px;
-    border-radius: 6px;
+.back-btn {
+    background: #3b485c;
+    color: #fff;
+    border: none;
+    padding: 8px 15px;
+    border-radius: 5px;
+    cursor: pointer;
 }
 
-#player-white-info { background: #ffffff; color: #000000; }
-#player-black-info { background: #333333; color: #ffffff; border: 1px solid #555; }
-
-#game-status-text {
-    font-size: 16px;
-    color: #e5a93c;
+.room-display {
+    color: #e5ba6b;
     font-weight: bold;
 }
 
+.turn-status {
+    font-size: 1.1rem;
+    font-weight: 600;
+    color: #ffe0a3;
+}
+
+/* Доска под благородное дерево */
 .board-wrapper {
     display: flex;
-    gap: 20px;
     width: 100%;
-    max-width: 1050px;
+    gap: 10px;
+    justify-content: center;
 }
 
-.board-container {
-    background: radial-gradient(circle, #3a2a1d 0%, #1f140b 100%);
-    border: 12px solid #54371f;
+.backgammon-board {
+    width: 760px;
+    height: 520px;
+    background: linear-gradient(135deg, #422a1d, #29180e);
+    border: 12px solid #1a0f09;
     border-radius: 8px;
-    box-shadow: 0 15px 30px rgba(0,0,0,0.6);
+    box-shadow: 0 20px 40px rgba(0,0,0,0.8);
     display: flex;
     flex-direction: column;
-    width: 850px;
-    height: 520px;
     position: relative;
 }
 
-.board-row {
+.board-half {
+    flex: 1;
     display: flex;
-    height: 210px;
-    width: 100%;
 }
 
-.top-row { align-items: flex-start; }
-.bottom-row { align-items: flex-end; }
+.top-half { border-bottom: 2px solid #1a0f09; }
 
-.board-cell {
+.board-quarter {
     flex: 1;
-    height: 100%;
+    display: flex;
+    justify-content: space-around;
+    position: relative;
+    padding: 0 5px;
+}
+
+.top-half .board-quarter { align-items: flex-start; }
+.bottom-half .board-quarter { align-items: flex-end; }
+
+.board-bar {
+    width: 30px;
+    background: #1a0f09;
+    box-shadow: inset 0 0 10px rgba(0,0,0,0.8);
+}
+
+/* Пункты (треугольники) на доске */
+.board-cell-point {
+    width: 44px;
+    height: 45%;
     position: relative;
     display: flex;
     flex-direction: column;
@@ -319,187 +294,208 @@ body {
     transition: background 0.2s;
 }
 
-/* Отрисовка треугольников треугольников на доске */
-.top-row .board-cell:nth-child(odd) { background: rgba(255,255,255,0.03); }
-.top-row .board-cell:nth-child(even) { background: rgba(0,0,0,0.15); }
-.bottom-row .board-cell:nth-child(odd) { background: rgba(0,0,0,0.15); }
-.bottom-row .board-cell:nth-child(even) { background: rgba(255,255,255,0.03); }
+.top-half .board-cell-point {
+    flex-direction: column;
+}
+.bottom-half .board-cell-point {
+    flex-direction: column-reverse;
+}
 
-/* Декоративные внутренние стрелки классических нард */
-.board-cell::before {
+/* Дизайн треугольников градиентами */
+.board-cell-point::before {
     content: '';
     position: absolute;
-    width: 0;
-    height: 0;
-    border-left: 15px solid transparent;
-    border-right: 15px solid transparent;
-    opacity: 0.15;
+    left: 0; right: 0;
+    width: 0; height: 0;
+    border-left: 22px solid transparent;
+    border-right: 22px solid transparent;
+    z-index: 1;
 }
-.top-row .board-cell::before {
+
+.top-half .board-cell-point::before {
     top: 0;
-    border-top: 140px solid #e5a93c;
+    border-top: 190px solid rgba(255,255,255,0.03);
 }
-.bottom-row .board-cell::before {
+.top-half .board-cell-point.odd-point::before {
+    border-top-color: rgba(195,155,79,0.06);
+}
+
+.bottom-half .board-cell-point::before {
     bottom: 0;
-    border-bottom: 140px solid #e5a93c;
+    border-bottom: 190px solid rgba(255,255,255,0.03);
+}
+.bottom-half .board-cell-point.odd-point::before {
+    border-bottom-color: rgba(195,155,79,0.06);
 }
 
-/* Разделительный бортик по центру (Бар) */
-.board-bar {
-    width: 24px;
+/* Подсветка доступного хода */
+.board-cell-point.highlighted-target {
+    box-shadow: inset 0 0 15px rgba(195,155,79,0.6);
+    border: 1px dashed #c39b4f;
+    z-index: 5;
+}
+
+/* Контейнер фишек внутри ячейки */
+.checkers-stack {
+    display: flex;
+    flex-direction: column;
+    position: relative;
+    z-index: 10;
+    width: 100%;
+    align-items: center;
     height: 100%;
-    background: #422a18;
-    box-shadow: inset 2px 0 5px rgba(0,0,0,0.5), inset -2px 0 5px rgba(0,0,0,0.5);
 }
 
-/* Центральная зона для кубиков */
-.board-center-panel {
-    height: 76px;
-    background: rgba(0, 0, 0, 0.2);
-    border-top: 2px solid #422a18;
-    border-bottom: 2px solid #422a18;
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    gap: 30px;
-    padding: 0 20px;
-}
+.top-half .checkers-stack { margin-top: 5px; justify-content: flex-start; }
+.bottom-half .checkers-stack { margin-bottom: 5px; justify-content: flex-end; }
 
-.dice-zone {
-    display: flex;
-    gap: 15px;
-}
-
-.dice-box {
-    width: 44px;
-    height: 44px;
-    background: #f4ebd9;
-    color: #110d0a;
-    border-radius: 8px;
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    font-size: 22px;
-    font-weight: 900;
-    box-shadow: 0 4px 8px rgba(0,0,0,0.4);
-    transition: transform 0.4s ease, opacity 0.2s;
-}
-
-.dice-box.used {
-    opacity: 0.35;
-    transform: scale(0.9);
-}
-
-/* СТИЛИ ШАШЕК */
+/* Дизайн шашек */
 .checker {
-    width: 40px;
-    height: 40px;
+    width: 34px;
+    height: 34px;
     border-radius: 50%;
-    margin: 2px 0;
     position: relative;
     box-shadow: 0 4px 6px rgba(0,0,0,0.4), inset 0 2px 4px rgba(255,255,255,0.2);
-    transition: transform 0.15s;
-    display: flex;
-    justify-content: center;
-    align-items: center;
-}
-
-.checker.white-checker {
-    background: radial-gradient(circle, #ffffff 60%, #cccccc 100%);
-    border: 2px solid #b3b3b3;
-}
-
-.checker.black-checker {
-    background: radial-gradient(circle, #3a3a3a 60%, #1a1a1a 100%);
-    border: 2px solid #444444;
-}
-
-/* Наложение стопки шашек друг на друга при большом количестве */
-.top-row .board-cell { flex-direction: column; justify-content: flex-start; padding-top: 5px; }
-.bottom-row .board-cell { flex-direction: column-reverse; justify-content: flex-start; padding-bottom: 5px; }
-
-/* Компактный вид для стопки (более 5 шашек) */
-.board-cell.stacked .checker {
-    margin-bottom: -32px;
-}
-.bottom-row .board-cell.stacked .checker {
-    margin-top: -32px;
-    margin-bottom: 2px;
-}
-
-/* Цифровой счетчик стопки */
-.stack-count {
-    position: absolute;
-    background: #e5a93c;
-    color: #000;
-    font-size: 11px;
-    font-weight: 900;
-    padding: 2px 5px;
-    border-radius: 8px;
-    z-index: 10;
-}
-.top-row .stack-count { bottom: 10px; }
-.bottom-row .stack-count { top: 10px; }
-
-/* Подсветка ходов */
-.board-cell.selectable {
-    box-shadow: inset 0 0 12px #5bc0de;
-}
-.board-cell.targetable {
-    box-shadow: inset 0 0 15px #e5a93c;
-    background: rgba(229, 169, 60, 0.1) !important;
-}
-
-/* ЗОНЫ СБРОСА ДОМА */
-.bearoff-container {
-    display: flex;
-    flex-direction: column;
-    gap: 15px;
-    width: 160px;
-}
-
-.bearoff-zone {
-    flex: 1;
-    background: #211a14;
-    border: 2px dashed #4a3b32;
-    border-radius: 8px;
-    padding: 12px;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
     cursor: pointer;
-    transition: all 0.2s;
+    transition: transform 0.1s, box-shadow 0.2s;
+    margin-bottom: -16px; /* Наложение фишек друг на друга */
 }
 
-.bearoff-zone.active-home {
-    border-color: #e5a93c;
-    background: rgba(229, 169, 60, 0.05);
+.top-half .checker { margin-bottom: -18px; }
+.bottom-half .checker { margin-top: -18px; margin-bottom: 0; }
+
+.checker-white {
+    background: radial-gradient(circle, #ffffff 30%, #dcdcdc 80%);
+    border: 2px solid #b0b0b0;
+}
+
+.checker-black {
+    background: radial-gradient(circle, #2a2d34 30%, #15171c 80%);
+    border: 2px solid #000;
+}
+
+.checker.selected-origin {
+    transform: scale(1.1);
+    box-shadow: 0 0 15px #3b75df, inset 0 0 8px #fff;
+    border-color: #3b75df;
+}
+
+/* Компактный бейдж для больших стопок */
+.stack-count-badge {
+    background: #c39b4f;
+    color: #11141a;
+    font-size: 0.75rem;
+    font-weight: bold;
+    padding: 1px 5px;
+    border-radius: 10px;
+    position: absolute;
+    z-index: 15;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.5);
+}
+.top-half .stack-count-badge { bottom: 5px; }
+.bottom-half .stack-count-badge { top: 5px; }
+
+/* Зоны Выброса Шашек */
+.bearoff-zone {
+    width: 100px;
+    background: #1a1f29;
+    border: 2px solid #2e3846;
+    border-radius: 8px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 10px 5px;
+}
+
+.bearoff-zone.active-bearoff {
+    border-color: #c39b4f;
+    box-shadow: 0 0 15px rgba(195,155,79,0.3);
 }
 
 .bearoff-title {
-    font-size: 11px;
-    font-weight: bold;
-    color: #8c7667;
+    font-size: 0.75rem;
+    color: #a0aab8;
     margin-bottom: 10px;
     text-align: center;
 }
 
 .bearoff-slots {
     display: flex;
-    flex-wrap: wrap;
+    flex-direction: column;
     gap: 4px;
-    justify-content: center;
     width: 100%;
+    align-items: center;
+    overflow-y: auto;
+    flex: 1;
 }
 
-.bearoff-slots .checker {
-    width: 24px;
-    height: 24px;
-    border-width: 1px;
+.bearoff-mini-checker {
+    width: 80px;
+    height: 12px;
+    border-radius: 4px;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.4);
+}
+.bearoff-white-piece { background: #e5e9f0; border: 1px solid #b0b0b0; }
+.bearoff-black-piece { background: #2a2d34; border: 1px solid #000; }
+
+/* Панель Управления и Кубики */
+.game-controls {
+    display: flex;
+    align-items: center;
+    gap: 25px;
+    background: #1a1f29;
+    padding: 15px 30px;
+    border-radius: 10px;
+    border: 1px solid #2e3846;
+    width: 100%;
+    justify-content: center;
 }
 
-.room-display {
-    margin-top: 10px;
-    font-size: 14px;
-    color: #8c7667;
+.roll-btn {
+    background: linear-gradient(90deg, #c39b4f, #e5ba6b);
+    color: #11141a;
+    border: none;
+    padding: 12px 25px;
+    font-size: 1rem;
+    font-weight: bold;
+    border-radius: 6px;
+    cursor: pointer;
+    transition: opacity 0.2s;
+}
+
+.roll-btn:disabled {
+    opacity: 0.4;
+    cursor: not-allowed;
+}
+
+.dice-container {
+    display: flex;
+    gap: 15px;
+}
+
+.die {
+    width: 45px;
+    height: 45px;
+    background: #fff;
+    color: #11141a;
+    border-radius: 8px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    font-size: 1.5rem;
+    font-weight: bold;
+    box-shadow: 0 4px 10px rgba(0,0,0,0.3);
+    transition: transform 0.4s ease, opacity 0.2s;
+}
+
+.die.used-die {
+    opacity: 0.3;
+    transform: scale(0.9);
+}
+
+.combo-info {
+    font-size: 0.95rem;
+    color: #ffe0a3;
+    max-width: 300px;
+    font-style: italic;
 }

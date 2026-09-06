@@ -3,125 +3,99 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Длинные Нарды от SANI GROUP</title>
+    <title>Длинные Нарды - SANI GROUP</title>
     <link rel="stylesheet" href="style.css">
 </head>
 <body>
-    <div id="app">
-        <!-- ГЛАВНОЕ МЕНЮ (как на картинке) -->
-        <div id="main-menu" class="menu-container">
-            <div class="menu-card">
-                <h1 class="menu-title">ДОМИНО от SANI GROUP</h1>
-                <div class="info-trigger" onclick="togglePopup(true)">ИНФОРМАЦИЯ О СТУДИИ ℹ️</div>
-                
-                <button class="menu-btn primary-btn" onclick="startSinglePlayer()">🤖 ИГРАТЬ С БОТОМ</button>
-                <button class="menu-btn secondary-btn" onclick="createOnlineTable()">🎲 СОЗДАТЬ СТОЛ (ONLINE)</button>
-                
-                <div class="input-group">
-                    <input type="text" id="room-code-input" placeholder="ВВЕДИТЕ 4 ЦИФРЫ КОДА" maxlength="4">
+    <!-- Главное Меню -->
+    <div id="main-menu" class="menu-container">
+        <div class="menu-content">
+            <h1 class="studio-title">SANI GROUP</h1>
+            <p class="studio-subtitle">ПРЕМИУМ ДЛИННЫЕ НАРДЫ</p>
+            
+            <div class="menu-buttons">
+                <button id="btn-local-bot" class="menu-btn primary-btn">Играть с Ботом</button>
+                <button id="btn-local-pvp" class="menu-btn primary-btn">Играть Вдвоем (Локально)</button>
+                <button id="btn-online-create" class="menu-btn secondary-btn">Создать Онлайн Стол</button>
+                <div class="online-join-container">
+                    <input type="text" id="join-code-input" placeholder="Код комнаты" maxlength="4">
+                    <button id="btn-online-join" class="menu-btn accent-btn">Войти</button>
                 </div>
-                <button class="menu-btn action-btn" onclick="joinOnlineTable()">📍 ПОДКЛЮЧИТЬСЯ К СТОЛУ</button>
-                
-                <button class="menu-btn rule-btn" onclick="openRules()">📜 ПРАВИЛА ИГРЫ</button>
-            </div>
-        </div>
-
-        <!-- МОДАЛЬНОЕ ОКНО ИНФОРМАЦИИ (как на картинке) -->
-        <div id="info-popup" class="popup-overlay hidden">
-            <div class="popup-card">
-                <div class="popup-close" onclick="togglePopup(false)">×</div>
-                <div class="popup-icons">♣️ ♦️ ♥️ ♠️</div>
-                <h2 class="popup-title">SANI GROUP</h2>
-                <p class="popup-subtitle">Команда основателей и разработчиков</p>
-                <p class="popup-text">
-                    Мы создали эту интерактивную версию культовой настольной игры ДЛИННЫЕ НАРДЫ, чтобы вы могли с максимальным комфортом играть по сети с друзьями со всего мира или тренироваться в битвах с умными ботами.
-                </p>
-                <div class="popup-features">
-                    <div class="feature-badge">⚡ Стабильный коннект</div>
-                    <div class="feature-badge">🎨 Стильный дизайн</div>
-                    <div class="feature-badge">🛡️ Честные правила</div>
-                </div>
-                <div class="popup-footer">© SANI GROUP 2026. Все права защищены.</div>
-            </div>
-        </div>
-
-        <!-- ОКНО ИГРОВОГО СТОЛА -->
-        <div id="game-table" class="hidden">
-            <div class="game-header">
-                <div class="player-info" id="player-white-info">Белые: <span id="count-white">15</span></div>
-                <div id="game-status-text">Ожидание хода...</div>
-                <div class="player-info" id="player-black-info">Черные: <span id="count-black">15</span></div>
-            </div>
-
-            <!-- ИГРОВАЯ ДОСКА -->
-            <div class="board-wrapper">
-                <div class="board-container">
-                    <!-- Верхний ряд ячеек: от 13 до 24 (индексы 12-23) -->
-                    <div class="board-row top-row">
-                        <div class="board-cell" data-index="12"></div>
-                        <div class="board-cell" data-index="13"></div>
-                        <div class="board-cell" data-index="14"></div>
-                        <div class="board-cell" data-index="15"></div>
-                        <div class="board-cell" data-index="16"></div>
-                        <div class="board-cell" data-index="17"></div>
-                        <div class="board-bar"></div>
-                        <div class="board-cell" data-index="18"></div>
-                        <div class="board-cell" data-index="19"></div>
-                        <div class="board-cell" data-index="20"></div>
-                        <div class="board-cell" data-index="21"></div>
-                        <div class="board-cell" data-index="22"></div>
-                        <div class="board-cell" data-index="23"></div>
-                    </div>
-
-                    <!-- Центральная панель управления (кубики) -->
-                    <div class="board-center-panel">
-                        <div class="dice-zone">
-                            <div id="die-1" class="dice-box"></div>
-                            <div id="die-2" class="dice-box"></div>
-                        </div>
-                        <button id="roll-btn" class="action-btn" onclick="handleDiceRollClick()">БРОСИТЬ ЗАРЫ</button>
-                    </div>
-
-                    <!-- Нижний ряд ячеек: от 12 до 1 в обратном визуальном порядке (индексы 11-0) -->
-                    <div class="board-row bottom-row">
-                        <div class="board-cell" data-index="11"></div>
-                        <div class="board-cell" data-index="10"></div>
-                        <div class="board-cell" data-index="9"></div>
-                        <div class="board-cell" data-index="8"></div>
-                        <div class="board-cell" data-index="7"></div>
-                        <div class="board-cell" data-index="6"></div>
-                        <div class="board-bar"></div>
-                        <div class="board-cell" data-index="5"></div>
-                        <div class="board-cell" data-index="4"></div>
-                        <div class="board-cell" data-index="3"></div>
-                        <div class="board-cell" data-index="2"></div>
-                        <div class="board-cell" data-index="1"></div>
-                        <div class="board-cell" data-index="0"></div>
-                    </div>
-                </div>
-
-                <!-- Боковые зоны сброса (Дом / Вывод шашек) -->
-                <div class="bearoff-container">
-                    <div id="bearoff-white" class="bearoff-zone white-zone" onclick="handleBearoffClick('WHITE')">
-                        <div class="bearoff-title">ВЫВОД БЕЛЫХ</div>
-                        <div class="bearoff-slots" id="bearoff-slots-white"></div>
-                    </div>
-                    <div id="bearoff-black" class="bearoff-zone black-zone" onclick="handleBearoffClick('BLACK')">
-                        <div class="bearoff-title">ВЫВОД ЧЕРНЫХ</div>
-                        <div class="bearoff-slots" id="bearoff-slots-black"></div>
-                    </div>
-                </div>
-            </div>
-
-            <div class="game-footer-controls">
-                <button class="menu-btn secondary-btn" onclick="backToMenu()">Выйти в меню</button>
-                <div id="room-display" class="room-display"></div>
+                <button id="btn-show-info" class="menu-btn info-btn">О Нас / Правила</button>
             </div>
         </div>
     </div>
 
-    <!-- Подключаем Socket.io клиентский скрипт, если работаем в онлайн режиме -->
-    <script src="/socket.io/socket.io.js" onerror="console.log('Socket.io не загружен, активирован локальный режим/бот.')"></script>
+    <!-- Модальное окно информации SANI GROUP -->
+    <div id="info-modal" class="modal-overlay hidden">
+        <div class="modal-box">
+            <span id="close-modal-btn" class="close-cross">&times;</span>
+            <h2>СТУДИЯ SANI GROUP</h2>
+            <div class="modal-scroll-content">
+                <h3>Уникальные правила нашей игры:</h3>
+                <ul>
+                    <li><strong>Объединение кубиков:</strong> Вы можете ходить каждым кубиком отдельно или сложить их значения (например, 2 и 4 дают один мощный ход на 6 клеток)!</li>
+                    <li><strong>Супер-Куш:</strong> При дублях (например, 3-3) значения складываются (3+3=6), и вы получаете 2 больших хода по 6 клеток!</li>
+                    <li><strong>Правило Головы:</strong> За ход можно снять только одну шашку. Исключение — первый ход игры при блокирующем куше.</li>
+                    <li><strong>Блокада из 6 ячеек:</strong> Запрещено строить сплошной забор, если впереди нет фишек соперника.</li>
+                </ul>
+                <p class="modal-footer-text">Создано с заботой о качестве и традициях настольных игр.</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Игровой Экран -->
+    <div id="game-screen" class="game-container hidden">
+        <div class="game-header">
+            <button id="btn-back-to-menu" class="back-btn">Выйти в меню</button>
+            <div id="room-info" class="room-display hidden">Комната: <span id="room-code-val">----</span></div>
+            <div id="turn-indicator" class="turn-status">Ход Белых</div>
+        </div>
+
+        <!-- Игровая Доска под дерево -->
+        <div class="board-wrapper">
+            <!-- Верхняя зона выброса Белых -->
+            <div id="white-bearoff" class="bearoff-zone white-zone">
+                <span class="bearoff-title">Дом Белых</span>
+                <div id="white-bearoff-container" class="bearoff-slots"></div>
+            </div>
+
+            <div class="backgammon-board">
+                <!-- Верхняя половина доски (ячейки 12-23 для 0-индекса, физически 13-24) -->
+                <div class="board-half top-half">
+                    <div class="board-quarter left-quarter" id="q-top-left"></div>
+                    <div class="board-bar"></div>
+                    <div class="board-quarter right-quarter" id="q-top-right"></div>
+                </div>
+
+                <!-- Нижняя половина доски (ячейки 11-0 для 0-индекса, физически 12-1) -->
+                <div class="board-half bottom-half">
+                    <div class="board-quarter left-quarter" id="q-bottom-left"></div>
+                    <div class="board-bar"></div>
+                    <div class="board-quarter right-quarter" id="q-bottom-right"></div>
+                </div>
+            </div>
+
+            <!-- Нижная зона выброса Черных -->
+            <div id="black-bearoff" class="bearoff-zone black-zone">
+                <span class="bearoff-title">Дом Черных</span>
+                <div id="black-bearoff-container" class="bearoff-slots"></div>
+            </div>
+        </div>
+
+        <!-- Контроллеры игры: Бросок и Кубики -->
+        <div class="game-controls">
+            <button id="btn-roll-dice" class="roll-btn">Бросить кубики</button>
+            <div class="dice-container">
+                <div id="dice-1" class="die">0</div>
+                <div id="dice-2" class="die">0</div>
+            </div>
+            <div id="combo-moves-display" class="combo-info"></div>
+        </div>
+    </div>
+
+    <!-- Подключение библиотеки Socket.io (автоматически раздается сервером) -->
+    <script src="/socket.io/socket.io.js"></script>
     <script src="client.js"></script>
 </body>
 </html>

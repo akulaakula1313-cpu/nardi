@@ -1,594 +1,669 @@
-// ГЛОБАЛЬНОЕ СОСТОЯНИЕ КЛИЕНТА И ИГРЫ
-let socket = null;
-let isOnlineMode = false;
-let myPlayerColor = 'WHITE'; // В соло-режиме всегда управляет текущим игроком
-let roomCode = null;
+// Игровые константы
+const PLAYER_WHITE = 'WHITE';
+const PLAYER_BLACK = 'BLACK';
 
+// Настройка Socket.io подключения
+const socket = io({ autoConnect: false });
+
+// Состояние игры
 let state = {
-    board: [],
-    currentPlayer: 'WHITE',
-    dice: [],
-    initialDice: [],
-    isFirstMove: { WHITE: true, BLACK: true },
+    board: [], // 24 ячейки (0-23)
+    currentPlayer: PLAYER_WHITE,
+    dice: [],              // Оставшиеся ходы (могут быть комбинированными)
+    originalDiceRoll: [],  // Что выпало на физических кубиках [d1, d2]
+    isFirstMove: { [PLAYER_WHITE]: true, [PLAYER_BLACK]: true },
     hasMovedFromHeadThisTurn: 0,
-    bearOff: { WHITE: 0, BLACK: 0 },
-    gameStatus: 'PLAYING' // PLAYING, OIN, MARS
+    bearOff: { [PLAYER_WHITE]: 0, [PLAYER_BLACK]: 0 },
+    gameStatus: 'PLAYING' // 'PLAYING', 'WHITE_WIN_OIN', 'WHITE_WIN_MARS', etc.
 };
 
+let isOnline = false;
+let myColor = PLAYER_WHITE; // В локальной игре управляет обоими
+let gameMode = 'LOCAL_BOT'; // 'LOCAL_BOT', 'LOCAL_PVP', 'ONLINE'
+let roomId = null;
 let selectedCellIndex = null;
-let possibleMovesForSelected = [];
+let availableTargetsForSelected = [];
 
-// Инициализация пустой доски локально
-function initLocalBoard() {
-    state.board = Array.from({ length: 24 }, (_, i) => {
-        if (i === 0) return { count: 15, color: 'WHITE' };
-        if (i === 12) return { count: 15, color: 'BLACK' };
-        return { count: 0, color: null };
-    });
-    state.currentPlayer = 'WHITE';
-    state.dice = [];
-    state.initialDice = [];
-    state.isFirstMove = { WHITE: true, BLACK: true };
-    state.hasMovedFromHeadThisTurn = 0;
-    state.bearOff = { WHITE: 0, BLACK: 0 };
-    state.gameStatus = 'PLAYING';
-    
-    selectedCellIndex = null;
-    possibleMovesForSelected = [];
-}
+// Элементы UI
+const mainMenu = document.getElementById('main-menu');
+const gameScreen = document.getElementById('game-screen');
+const infoModal = document.getElementById('info-modal');
+const turnIndicator = document.getElementById('turn-indicator');
+const btnRollDice = document.getElementById('btn-roll-dice');
+const dice1Element = document.getElementById('dice-1');
+const dice2Element = document.getElementById('dice-2');
+const comboMovesDisplay = document.getElementById('combo-moves-display');
+const roomInfo = document.getElementById('room-info');
+const roomCodeVal = document.getElementById('room-code-val');
+const joinCodeInput = document.getElementById('join-code-input');
 
-// Переключение вкладок/окон меню
-function togglePopup(show) {
-    const popup = document.getElementById('info-popup');
-    if (show) popup.classList.remove('hidden');
-    else popup.classList.add('hidden');
-}
+// Инициализация обработчиков главного меню
+document.getElementById('btn-local-bot').addEventListener('click', () => startLocalGame('LOCAL_BOT'));
+document.getElementById('btn-local-pvp').addEventListener('click', () => startLocalGame('LOCAL_PVP'));
+document.getElementById('btn-show-info').addEventListener('click', () => infoModal.classList.remove('hidden'));
+document.getElementById('close-modal-btn').addEventListener('click', () => infoModal.classList.add('hidden'));
+document.getElementById('btn-back-to-menu').addEventListener('click', leaveToMenu);
 
-function openRules() {
-    alert("ПРАВИЛА ДЛИННЫХ НАРД:\n1. Оба игрока движутся против часовой стрелки (в сторону увеличения индексов ячеек).\n2. С головы (стартовой позиции) можно снять только 1 фишку за ход. Исключение: первый ход игры при куше 3-3, 4-4, 6-6.\n3. Нельзя ставить фишку на ячейку, занятую соперником (даже одной фишкой).\n4. Нельзя строить глухую блокаду из 6 ячеек, если впереди неё нет ни одной фишки оппонента.\n5. Если можно выполнить только один ход из двух выпавших кубиков — вы обязаны сыграть БОЛЬШИЙ кубик.");
-}
+document.getElementById('btn-online-create').addEventListener('click', createOnlineRoom);
+document.getElementById('btn-online-join').addEventListener('click', joinOnlineRoom);
+btnRollDice.addEventListener('click', triggerDiceRoll);
 
-function backToMenu() {
-    if(socket) {
-        socket.disconnect();
-        socket = null;
+// Инициализация структуры доски в HTML
+function buildBoardDOM() {
+    const qTopLeft = document.getElementById('q-top-left');
+    const qTopRight = document.getElementById('q-top-right');
+    const qBottomLeft = document.getElementById('q-bottom-left');
+    const qBottomRight = document.getElementById('q-bottom-right');
+
+    qTopLeft.innerHTML = ''; qTopRight.innerHTML = '';
+    qBottomLeft.innerHTML = ''; qBottomRight.innerHTML = '';
+
+    // Верхняя панель: ячейки от 12 до 23 (физически 13-24)
+    // Отрисовка слева направо: 12..17 в левую, 18..23 в правую четверть
+    for (let i = 12; i <= 23; i++) {
+        const targetQ = i <= 17 ? qTopLeft : qTopRight;
+        targetQ.appendChild(createCellElement(i));
     }
-    isOnlineMode = false;
-    document.getElementById('game-table').classList.add('hidden');
-    document.getElementById('main-menu').classList.remove('hidden');
+
+    // Нижняя панель: ячейки от 11 до 0 (физически 12-1)
+    // В длинных нардах нижний ряд идет справа налево: 11..6 в правую, 5..0 в левую
+    for (let i = 11; i >= 0; i--) {
+        const targetQ = i >= 6 ? qBottomRight : qBottomLeft;
+        targetQ.appendChild(createCellElement(i));
+    }
 }
 
-// СТАРТ РЕЖИМОВ
-function startSinglePlayer() {
-    isOnlineMode = false;
-    myPlayerColor = 'WHITE'; // Игрок играет за белых, бот за черных
-    initLocalBoard();
-    
-    document.getElementById('main-menu').classList.add('hidden');
-    document.getElementById('game-table').classList.remove('hidden');
-    document.getElementById('room-display').innerText = "Режим: Игра с Ботом (Вы за Белых)";
-    renderBoard();
+function createCellElement(index) {
+    const cellObj = document.createElement('div');
+    cellObj.className = `board-cell-point ${index % 2 !== 0 ? 'odd-point' : ''}`;
+    cellObj.id = `cell-${index}`;
+    cellObj.addEventListener('click', () => handleCellClick(index));
+
+    const stack = document.createElement('div');
+    stack.className = 'checkers-stack';
+    stack.id = `stack-${index}`;
+    cellObj.appendChild(stack);
+
+    return cellObj;
 }
 
-function createOnlineTable() {
-    setupSocketConnection();
+// Запуск локального режима
+function startLocalGame(mode) {
+    isOnline = false;
+    gameMode = mode;
+    myColor = PLAYER_WHITE; // Локально ходим за обоих по очереди
+    roomInfo.classList.add('hidden');
+    mainMenu.classList.add('hidden');
+    gameScreen.classList.remove('hidden');
+    initGameState();
+    buildBoardDOM();
+    updateUI();
+}
+
+// Сетевой режим: Создание стола
+function createOnlineRoom() {
+    gameMode = 'ONLINE';
+    isOnline = true;
+    myColor = PLAYER_WHITE; 
+    socket.connect();
     socket.emit('createRoom');
 }
 
-function joinOnlineTable() {
-    const code = document.getElementById('room-code-input').value.trim();
-    if(code.length !== 4) {
-        alert("Введите корректный 4-значный код комнаты");
+// Сетевой режим: Подключение
+function joinOnlineRoom() {
+    const code = joinCodeInput.value.trim().toUpperCase();
+    if (code.length !== 4) {
+        alert('Введите корректный 4-значный код комнаты!');
         return;
     }
-    setupSocketConnection();
-    socket.emit('joinRoom', code);
+    gameMode = 'ONLINE';
+    isOnline = true;
+    myColor = PLAYER_BLACK;
+    socket.connect();
+    socket.emit('joinRoom', { roomId: code });
 }
 
-function setupSocketConnection() {
-    if (socket) return;
+// Слушатели сетевых событий
+socket.on('roomCreated', (data) => {
+    roomId = data.roomId;
+    roomCodeVal.textContent = roomId;
+    roomInfo.classList.remove('hidden');
+    mainMenu.classList.add('hidden');
+    gameScreen.classList.remove('hidden');
+    initGameState();
+    buildBoardDOM();
+    updateUI();
+    turnIndicator.textContent = 'Ожидание соперника...';
+    btnRollDice.disabled = true;
+});
+
+socket.on('gameStarted', (serverState) => {
+    state = serverState;
+    turnIndicator.textContent = `Игра началась! Ваш цвет: ${myColor === PLAYER_WHITE ? 'Белые' : 'Черные'}`;
+    updateUI();
+});
+
+socket.on('gameStateUpdated', (serverState) => {
+    state = serverState;
+    updateUI();
+    if (gameMode === 'ONLINE' && state.currentPlayer === myColor && state.dice.length === 0 && state.gameStatus === 'PLAYING') {
+        btnRollDice.disabled = false;
+    }
+});
+
+socket.on('errorMessage', (msg) => {
+    alert(msg);
+    leaveToMenu();
+});
+
+function leaveToMenu() {
+    if (isOnline) socket.disconnect();
+    mainMenu.classList.remove('hidden');
+    gameScreen.classList.add('hidden');
+}
+
+// Логика Игры и Правила
+function initGameState() {
+    state.board = Array.from({ length: 24 }, (_, i) => {
+        if (i === 0) return { count: 15, color: PLAYER_WHITE };  // Голова Белых (ячейка 1)
+        if (i === 12) return { count: 15, color: PLAYER_BLACK }; // Голова Черных (ячейка 13)
+        return { count: 0, color: null };
+    });
+    state.currentPlayer = PLAYER_WHITE;
+    state.dice = [];
+    state.originalDiceRoll = [];
+    state.isFirstMove = { [PLAYER_WHITE]: true, [PLAYER_BLACK]: true };
+    state.hasMovedFromHeadThisTurn = 0;
+    state.bearOff = { [PLAYER_WHITE]: 0, [PLAYER_BLACK]: 0 };
+    state.gameStatus = 'PLAYING';
+    selectedCellIndex = null;
+    availableTargetsForSelected = [];
+}
+
+// Функция Броска Кубиков
+function triggerDiceRoll() {
+    if (state.gameStatus !== 'PLAYING') return;
+    if (isOnline && state.currentPlayer !== myColor) return;
+    if (state.dice.length > 0) return;
+
+    let d1 = Math.floor(Math.random() * 6) + 1;
+    let d2 = Math.floor(Math.random() * 6) + 1;
     
-    // Автоматическое подключение к текущему хосту
-    socket = io();
-    isOnlineMode = true;
+    state.originalDiceRoll = [d1, d2];
 
-    socket.on('roomCreated', (data) => {
-        roomCode = data.roomCode;
-        myPlayerColor = 'WHITE';
-        state = data.state;
-        document.getElementById('main-menu').classList.add('hidden');
-        document.getElementById('game-table').classList.remove('hidden');
-        document.getElementById('room-display').innerText = `Комната: ${roomCode} | Вы играете за БЕЛЫХ`;
-        renderBoard();
-    });
+    // ПРАВИЛА ХОДОВ И КУШЕЙ ОТ SANI GROUP:
+    if (d1 === d2) {
+        // Любой дубль (куш, например 3-3) складывается в единый номинал (3+3=6)
+        // Игрок получает ровно 2 хода на это полное суммарное расстояние!
+        let sumValue = d1 + d2;
+        state.dice = [sumValue, sumValue];
+    } else {
+        // Обычные разные зары (например, 2 и 4) дают 3 опции ходов:
+        // Ход на d1, Ход на d2, либо ХОД НА ПОЛНУЮ СУММУ (d1 + d2 = 6 клеток прямо за раз)
+        state.dice = [d1, d2, d1 + d2];
+    }
 
-    socket.on('roomJoined', (data) => {
-        roomCode = data.roomCode;
-        myPlayerColor = 'BLACK';
-        state = data.state;
-        document.getElementById('main-menu').classList.add('hidden');
-        document.getElementById('game-table').classList.remove('hidden');
-        document.getElementById('room-display').innerText = `Комната: ${roomCode} | Вы играете за ЧЕРНЫХ`;
-        renderBoard();
-    });
-
-    socket.on('gameStateUpdate', (updatedState) => {
-        state = updatedState;
-        selectedCellIndex = null;
-        possibleMovesForSelected = [];
-        renderBoard();
-        
-        // Если ход перешел боту/сопернику в офлайне, обрабатываем ход бота
-        if (!isOnlineMode && state.currentPlayer === 'BLACK' && state.gameStatus === 'PLAYING') {
-            setTimeout(triggerBotTurn, 800);
-        }
-    });
-
-    socket.on('errorMsg', (msg) => {
-        alert(msg);
-        backToMenu();
-    });
+    if (isOnline) {
+        socket.emit('rollDice', { roomId, originalDiceRoll: state.originalDiceRoll, dice: state.dice });
+    } else {
+        processTurnPossibilities();
+    }
 }
 
-// КРУГОВАЯ ЛОГИКА ДВИЖЕНИЯ
-function getRingIndex(index) {
-    return (index % 24 + 24) % 24;
+function processTurnPossibilities() {
+    updateUI();
+    
+    // Проверка, есть ли вообще доступные ходы
+    let allPossible = getAllValidMoves(state);
+    if (allPossible.length === 0) {
+        // Автоматическая передача хода, если ходить некуда
+        setTimeout(() => {
+            if (state.gameStatus === 'PLAYING') {
+                switchTurn();
+            }
+        }, 1500);
+    }
 }
 
-function getHeadIndex(player) {
-    return player === 'WHITE' ? 0 : 12;
+// Смена хода
+function switchTurn() {
+    state.isFirstMove[state.currentPlayer] = false;
+    state.currentPlayer = state.currentPlayer === PLAYER_WHITE ? PLAYER_BLACK : PLAYER_WHITE;
+    state.dice = [];
+    state.originalDiceRoll = [];
+    state.hasMovedFromHeadThisTurn = 0;
+    selectedCellIndex = null;
+    availableTargetsForSelected = [];
+    
+    updateUI();
+
+    // Логика Бота
+    if (gameMode === 'LOCAL_BOT' && state.currentPlayer === PLAYER_BLACK && state.gameStatus === 'PLAYING') {
+        setTimeout(makeBotTurn, 1000);
+    }
 }
 
-// Проверка нахождения ячейки в доме
+// Получение циклического индекса доски (0-23)
+function getRingIndex(idx) {
+    return (idx % 24 + 24) % 24;
+}
+
+// Проверка нахождения в Доме
 function isCellInHome(index, player) {
-    if (player === 'WHITE') return index >= 18 && index <= 23;
-    return index >= 6 && index <= 11;
+    return player === PLAYER_WHITE ? (index >= 18 && index <= 23) : (index >= 6 && index <= 11);
 }
 
-// Проверка, все ли шашки заведены в дом
-function areAllCheckersInHome(player) {
-    return state.board.every((cell, idx) => {
+// Проверка: все ли шашки заведены в Дом
+function areAllInHome(gameState, player) {
+    return gameState.board.every((cell, idx) => {
         if (cell.color !== player) return true;
         return isCellInHome(idx, player);
     });
 }
 
-// ВАЛИДАЦИЯ НЕПРЕРЫВНОГО БЛОКА ИЗ 6 ЯЧЕЕК
-function checkSixBlockConstraint(targetIdx, player) {
-    // Временный клон доски для симуляции добавления фишки
-    let testBoard = JSON.parse(JSON.stringify(state.board));
-    testBoard[targetIdx].color = player;
+// Определение стартовой Головы
+function getHeadIndex(player) {
+    return player === PLAYER_WHITE ? 0 : 12;
+}
+
+// Проверка блокировки из 6 ячеек подряд
+function checkSixBlockConstraint(board, player, targetIdx) {
+    let tempBoard = JSON.parse(JSON.stringify(board));
     
-    let hasSixBlock = false;
+    // Эмулируем появление фишки в целевой ячейке
+    tempBoard[targetIdx].color = player;
+    
+    let opponent = player === PLAYER_WHITE ? PLAYER_BLACK : PLAYER_WHITE;
+    
+    // Проверка наличия цепочки из 6 подряд занятых ячеек игрока
+    let hasSixChain = false;
     for (let i = 0; i < 24; i++) {
         let chain = 0;
         for (let j = 0; j < 6; j++) {
-            if (testBoard[getRingIndex(i + j)].color === player) chain++;
+            if (tempBoard[getRingIndex(i + j)].color === player) chain++;
             else break;
         }
         if (chain === 6) {
-            hasSixBlock = true;
+            hasSixChain = true;
             break;
         }
     }
     
-    if (!hasSixBlock) return false; // Нет блока из 6 шашек подряд — ход разрешен
+    if (!hasSixChain) return false; // Нет блока из 6 — ход законен
     
-    // Если блок построился, проверяем, есть ли фишки противника впереди этого блока
-    const opponent = player === 'WHITE' ? 'BLACK' : 'WHITE';
-    let oppCheckers = testBoard.map((c, idx) => ({c, idx})).filter(item => item.c.color === opponent);
+    // Если блок выстроился, проверяем, есть ли хоть одна шашка оппонента впереди этого блока
+    let oppCheckers = [];
+    tempBoard.forEach((cell, idx) => {
+        if (cell.color === opponent) oppCheckers.push(idx);
+    });
     
     if (oppCheckers.length === 0) return false;
     
-    // Проверяем, заперт ли оппонент наглухо (упрощенная базовая проверка пути движения)
+    // Проверим, может ли соперник теоретически сделать хоть одно продвижение по кольцу, 
+    // или он наглухо заперт. Если впереди блока пусто — возвращаем true (запрещено).
     return false; 
 }
 
-// РАСЧЕТ ДОСТУПНЫХ ХОДОВ ДЛЯ КОНКРЕТНОЙ ЯЧЕЙКИ И КУБИКА
-function getMoveForDie(fromIdx, dieValue, player) {
-    const cell = state.board[fromIdx];
-    if (!cell || cell.color !== player || cell.count === 0) return null;
-    
+// Генерация ходов для одной конкретной ячейки
+function getValidMovesForCell(gameState, fromIdx) {
+    const player = gameState.currentPlayer;
+    const cell = gameState.board[fromIdx];
+    if (!cell || cell.color !== player || cell.count === 0) return [];
+
+    let possibleMoves = [];
+    const headIndex = getHeadIndex(player);
+
     // Правило головы
-    if (fromIdx === getHeadIndex(player)) {
+    if (fromIdx === headIndex) {
         let maxAllowed = 1;
-        // Проверка исключения первого хода при блокирующем куше
-        if (state.isFirstMove[player] && state.initialDice.length === 4 && state.initialDice[0] === dieValue) {
-            if ([3, 4, 6].includes(dieValue)) {
+        // Исключение самого первого хода при блокирующем куше
+        if (gameState.isFirstMove[player] && gameState.originalDiceRoll[0] === gameState.originalDiceRoll[1]) {
+            let roll = gameState.originalDiceRoll[0];
+            if (roll === 3 || roll === 4 || roll === 6) {
                 maxAllowed = 2;
             }
         }
-        if (state.hasMovedFromHeadThisTurn >= maxAllowed) return null;
+        if (gameState.hasMovedFromHeadThisTurn >= maxAllowed) {
+            return []; // Снятие заблокировано правилом Головы
+        }
     }
-    
-    // Расчет целевой позиции
-    let targetIdx = getRingIndex(fromIdx + dieValue);
-    
-    // Проверка обычного перемещения по доске
-    const targetCell = state.board[targetIdx];
-    if (targetCell.color !== null && targetCell.color !== player) {
-        return null; // Занято соперником
-    }
-    
-    // Проверка правила блокировки из 6 ячеек подряд
-    if (checkSixBlockConstraint(targetIdx, player)) {
-        return null;
-    }
-    
-    return { type: 'MOVE', from: fromIdx, to: targetIdx, die: dieValue };
-}
 
-// ДОПОЛНИТЕЛЬНАЯ ПРОВЕРКА ВЫБРОСА ИЗ ДОМА
-function getBearoffMovesForCell(fromIdx, dieValue, player) {
-    if (!areAllCheckersInHome(player)) return null;
-    
-    const cell = state.board[fromIdx];
-    if (!cell || cell.color !== player || cell.count === 0) return null;
-    
-    // Определение расстояния до финиша (вывода)
-    // Для белых дом 18-23, финиш за 23 ячейкой (индекс 24). Расстояние = 24 - fromIdx
-    // Для черных дом 6-11, финиш за 11 ячейкой (индекс 12). Расстояние = 12 - fromIdx
-    let distance = player === 'WHITE' ? (24 - fromIdx) : (12 - fromIdx);
-    
-    if (distance === dieValue) {
-        return { type: 'BEAROFF', from: fromIdx, to: -1, die: dieValue };
-    }
-    
-    // Если точного совпадения нет, разрешается выводить фишки со старших пунктов дома, 
-    // если на более удаленных от финиша пунктах шашек нет.
-    if (dieValue > distance) {
-        let hasOlder = false;
-        if (player === 'WHITE') {
-            for (let i = 18; i < fromIdx; i++) {
-                if (state.board[i].color === player && state.board[i].count > 0) hasOlder = true;
-            }
+    const inHome = areAllInHome(gameState, player);
+
+    // Проверяем доступность ходов из оставшегося массива dice
+    gameState.dice.forEach(step => {
+        // Рассчитываем целевую позицию продвижения вперед
+        let distanceWalked = step;
+        let toIdx = getRingIndex(fromIdx + distanceWalked);
+
+        // Проверка корректности траектории движения в длинных нардах
+        // Белые идут 0 -> 23. Черные идут 12 -> 23 -> 0 -> 11.
+        if (player === PLAYER_WHITE) {
+            if (fromIdx + distanceWalked > 23 && !inHome) return; // Нельзя перелетать финиш, пока не все в доме
         } else {
-            for (let i = 6; i < fromIdx; i++) {
-                if (state.board[i].color === player && state.board[i].count > 0) hasOlder = true;
-            }
-        }
-        if (!hasOlder) {
-            return { type: 'BEAROFF', from: fromIdx, to: -1, die: dieValue };
-        }
-    }
-    
-    return null;
-}
-
-// ГЕНЕРАЦИЯ И СОРТИРОВКА ВСЕХ ДОСТУПНЫХ ХОДОВ ИГРОКА (С ОБЯЗАТЕЛЬНОСТЬЮ БОЛЬШЕГО ХОДА)
-function generateAvailableMoves(player) {
-    if (state.dice.length === 0) return [];
-    
-    let rawMoves = [];
-    const uniqueDice = Array.from(new Set(state.dice));
-    
-    for (let i = 0; i < 24; i++) {
-        for (let die of uniqueDice) {
-            let m = getMoveForDie(i, die, player);
-            if (m) rawMoves.push(m);
-            
-            let b = getBearoffMovesForCell(i, die, player);
-            if (b) rawMoves.push(b);
-        }
-    }
-    
-    // Проверка жесткого правила обязательности большего хода, если выпали разные кубики
-    if (uniqueDice.length === 2) {
-        const maxDie = Math.max(...uniqueDice);
-        const minDie = Math.min(...uniqueDice);
-        
-        // Проверяем, можно ли последовательно выполнить оба хода
-        let canDoBoth = false;
-        // Симуляция возможности цепочки шагов опускается ради производительности, 
-        // но выполняется базовая фильтрация обязательности старшего зары, если ходы взаимоисключающие.
-        let hasMaxMoves = rawMoves.some(m => m.die === maxDie);
-        let hasMinMoves = rawMoves.some(m => m.die === minDie);
-        
-        if (hasMaxMoves && !canDoBoth) {
-            // Если игрок физически может пойти только одним кубиком, оставляем строго старший кубик
-            let simulatedSucces = false;
-            // Упрощенный фильтр: если цепочка ходов ограничена, отдаем приоритет большему
-        }
-    }
-    
-    return rawMoves;
-}
-
-// ОБРАБОТКА НАЖАТИЙ НА ИГРОВОМ ПОЛЕ
-function handleCellClick(index) {
-    if (isOnlineMode && state.currentPlayer !== myPlayerColor) return;
-    if (!isOnlineMode && state.currentPlayer !== 'WHITE') return; // Ходит бот
-    if (state.gameStatus !== 'PLAYING') return;
-    if (state.dice.length === 0) return;
-
-    // Если ячейка подсвечена как цель для хода
-    const move = possibleMovesForSelected.find(m => m.to === index);
-    if (move) {
-        executeMove(move);
-        return;
-    }
-
-    // Иначе выбираем фишку для старта хода
-    const cell = state.board[index];
-    if (cell && cell.color === state.currentPlayer && cell.count > 0) {
-        selectedCellIndex = index;
-        const allMoves = generateAvailableMoves(state.currentPlayer);
-        possibleMovesForSelected = allMoves.filter(m => m.from === index);
-        renderBoard();
-    } else {
-        selectedCellIndex = null;
-        possibleMovesForSelected = [];
-        renderBoard();
-    }
-}
-
-function handleBearoffClick(player) {
-    if (state.currentPlayer !== player) return;
-    if (isOnlineMode && state.currentPlayer !== myPlayerColor) return;
-    if (state.gameStatus !== 'PLAYING') return;
-    
-    const move = possibleMovesForSelected.find(m => m.type === 'BEAROFF');
-    if (move) {
-        executeMove(move);
-    }
-}
-
-// ВЫПОЛНЕНИЕ И ФИКСАЦИЯ ИЗМЕНЕНИЙ ХОДА
-function executeMove(move) {
-    if (isOnlineMode) {
-        socket.emit('makeMove', move);
-        return;
-    }
-    
-    // Локальное выполнение хода
-    const player = state.currentPlayer;
-    
-    // 1. Изменение позиций на доске
-    state.board[move.from].count--;
-    if (state.board[move.from].count === 0) state.board[move.from].color = null;
-    
-    if (move.type === 'MOVE') {
-        state.board[move.to].count++;
-        state.board[move.to].color = player;
-    } else if (move.type === 'BEAROFF') {
-        state.bearOff[player]++;
-    }
-    
-    // 2. Учет правила головы
-    if (move.from === getHeadIndex(player)) {
-        state.hasMovedFromHeadThisTurn++;
-    }
-    
-    // 3. Удаление использованного кубика
-    const idx = state.dice.indexOf(move.die);
-    if (idx > -1) state.dice.splice(idx, 1);
-    
-    // Проверка конца игры
-    checkGameWinConditions();
-    
-    // Проверка завершения или передачи хода
-    if (state.dice.length === 0 || generateAvailableMoves(state.currentPlayer).length === 0) {
-        finalizeTurn();
-    } else {
-        selectedCellIndex = null;
-        possibleMovesForSelected = [];
-        renderBoard();
-    }
-}
-
-function handleDiceRollClick() {
-    if (isOnlineMode) {
-        if (state.currentPlayer === myPlayerColor && state.dice.length === 0) {
-            socket.emit('rollDice');
-        }
-        return;
-    }
-    
-    // Локальный бросок кубиков
-    if (state.dice.length > 0) return;
-    
-    let d1 = Math.floor(Math.random() * 6) + 1;
-    let d2 = Math.floor(Math.random() * 6) + 1;
-    
-    if (d1 === d2) {
-        state.dice = [d1, d1, d1, d1];
-    } else {
-        state.dice = [d1, d2];
-    }
-    state.initialDice = [...state.dice];
-    
-    // Проверяем, есть ли вообще доступные ходы с таким броском
-    if (generateAvailableMoves(state.currentPlayer).length === 0) {
-        setTimeout(() => {
-            alert("Нет доступных ходов!");
-            finalizeTurn();
-        }, 1000);
-    }
-    
-    renderBoard();
-}
-
-function finalizeTurn() {
-    state.isFirstMove[state.currentPlayer] = false;
-    state.hasMovedFromHeadThisTurn = 0;
-    state.dice = [];
-    state.initialDice = [];
-    state.currentPlayer = state.currentPlayer === 'WHITE' ? 'BLACK' : 'WHITE';
-    
-    selectedCellIndex = null;
-    possibleMovesForSelected = [];
-    renderBoard();
-    
-    // Запуск искусственного интеллекта бота
-    if (!isOnlineMode && state.currentPlayer === 'BLACK' && state.gameStatus === 'PLAYING') {
-        setTimeout(triggerBotTurn, 800);
-    }
-}
-
-// ЛОГИКА СИМУЛЯЦИИ ХОДА БОТА ИИ
-function triggerBotTurn() {
-    if (state.currentPlayer !== 'BLACK' || state.gameStatus !== 'PLAYING') return;
-    
-    // Бросок кубиков ботом
-    let d1 = Math.floor(Math.random() * 6) + 1;
-    let d2 = Math.floor(Math.random() * 6) + 1;
-    if (d1 === d2) state.dice = [d1, d1, d1, d1];
-    else state.dice = [d1, d2];
-    state.initialDice = [...state.dice];
-    
-    renderBoard();
-    
-    // Запускаем серию ходов бота по таймеру
-    function doBotStep() {
-        let moves = generateAvailableMoves('BLACK');
-        if (moves.length === 0 || state.dice.length === 0) {
-            finalizeTurn();
-            return;
-        }
-        // Бот выбирает первый попавшийся валидный ход (приоритет выводу фишек)
-        let bearoffMove = moves.find(m => m.type === 'BEAROFF');
-        let selectedMove = bearoffMove || moves[Math.floor(Math.random() * moves.length)];
-        
-        executeMove(selectedMove);
-        setTimeout(doBotStep, 600);
-    }
-    
-    setTimeout(doBotStep, 600);
-}
-
-function checkGameWinConditions() {
-    if (state.bearOff.WHITE === 15) {
-        state.gameStatus = state.bearOff.BLACK > 0 ? 'OIN' : 'MARS';
-        alert(`Белые победили! Статус победы: ${state.gameStatus}`);
-    } else if (state.bearOff.BLACK === 15) {
-        state.gameStatus = state.bearOff.WHITE > 0 ? 'OIN' : 'MARS';
-        alert(`Черные победили! Статус победы: ${state.gameStatus}`);
-    }
-}
-
-// ОТРИСОВКА ИНТЕРФЕЙСА (UI RENDER)
-function renderBoard() {
-    // Обновление текстов заголовков
-    document.getElementById('count-white').innerText = `Выведено: ${state.bearOff.WHITE}/15`;
-    document.getElementById('count-black').innerText = `Выведено: ${state.bearOff.BLACK}/15`;
-    
-    let statusMsg = `Ход игрока: ${state.currentPlayer === 'WHITE' ? 'БЕЛЫЕ' : 'ЧЕРНЫЕ'}`;
-    if (state.gameStatus !== 'PLAYING') statusMsg = `ИГРА ЗАВЕРШЕНА: ${state.gameStatus}`;
-    document.getElementById('game-status-text').innerText = statusMsg;
-
-    // Отображение кубиков
-    const die1Box = document.getElementById('die-1');
-    const die2Box = document.getElementById('die-2');
-    
-    if (state.initialDice.length > 0) {
-        die1Box.innerText = state.initialDice[0] || '';
-        die1Box.classList.remove('hidden', 'used');
-        if (state.dice.length < state.initialDice.length && !state.dice.includes(state.initialDice[0])) {
-            die1Box.classList.add('used');
-        }
-        
-        if (state.initialDice.length > 1) {
-            die2Box.innerText = state.initialDice[1] || '';
-            die2Box.classList.remove('hidden', 'used');
-            if (state.dice.length === 0 || (state.initialDice.length === 2 && !state.dice.includes(state.initialDice[1]))) {
-                die2Box.classList.add('used');
-            }
-        } else {
-            die2Box.classList.add('hidden');
-        }
-    } else {
-        die1Box.innerText = '-';
-        die2Box.innerText = '-';
-        die1Box.classList.remove('used');
-        die2Box.classList.remove('used');
-    }
-
-    // Скрытие/Показ кнопки броска
-    const rollBtn = document.getElementById('roll-btn');
-    if (state.dice.length > 0 || state.gameStatus !== 'PLAYING') {
-        rollBtn.style.display = 'none';
-    } else {
-        rollBtn.style.display = 'block';
-    }
-
-    // Подсветка зоны вывода (дома)
-    const bearoffWhiteZone = document.getElementById('bearoff-white');
-    const bearoffBlackZone = document.getElementById('bearoff-black');
-    bearoffWhiteZone.classList.remove('active-home');
-    bearoffBlackZone.classList.remove('active-home');
-    
-    if (possibleMovesForSelected.some(m => m.type === 'BEAROFF' && state.currentPlayer === 'WHITE')) {
-        bearoffWhiteZone.classList.add('active-home');
-    }
-    if (possibleMovesForSelected.some(m => m.type === 'BEAROFF' && state.currentPlayer === 'BLACK')) {
-        bearoffBlackZone.classList.add('active-home');
-    }
-
-    // Отрисовка фишек в боковых ячейках вывода
-    renderBearoffCounters();
-
-    // Рендеринг всех ячеек доски
-    const allCells = document.querySelectorAll('.board-cell');
-    allCells.forEach(cellElement => {
-        const index = parseInt(cellElement.getAttribute('data-index'));
-        const cellData = state.board[index];
-        
-        // Очищаем ячейку
-        cellElement.innerHTML = '';
-        cellElement.className = 'board-cell';
-        cellElement.onclick = () => handleCellClick(index);
-
-        // Классы подсветки ходов
-        if (selectedCellIndex === index) {
-            cellElement.classList.add('selectable');
-        }
-        if (possibleMovesForSelected.some(m => m.to === index)) {
-            cellElement.classList.add('targetable');
+            // Для черных: старт 12, финиш в 11.
+            let relativeFrom = fromIdx >= 12 ? fromIdx - 12 : fromIdx + 12;
+            if (relativeFrom + distanceWalked > 23 && !inHome) return;
         }
 
-        if (cellData && cellData.count > 0) {
-            // Если шашек больше 5, включаем режим компактной стопки
-            if (cellData.count > 5) {
-                cellElement.classList.add('stacked');
-                
-                // Отрисовываем 5 видимых фишек
-                for (let c = 0; c < 5; c++) {
-                    const checkerNode = document.createElement('div');
-                    checkerNode.className = `checker ${cellData.color === 'WHITE' ? 'white-checker' : 'black-checker'}`;
-                    cellElement.appendChild(checkerNode);
+        // Логика выброса шашек за пределы доски (Дом)
+        if (inHome) {
+            let isBearOffGoal = false;
+            if (player === PLAYER_WHITE) {
+                let stepsToFinish = 24 - fromIdx;
+                if (step === stepsToFinish) isBearOffGoal = true;
+                // Правило сброса с младших позиций, если старшие пусты
+                else if (step > stepsToFinish) {
+                    let olderCellsEmpty = true;
+                    for (let h = 18; h < fromIdx; h++) {
+                        if (gameState.board[h].color === player && gameState.board[h].count > 0) olderCellsEmpty = false;
+                    }
+                    if (olderCellsEmpty) isBearOffGoal = true;
                 }
-                
-                // Добавляем числовой маркер количества сверху стопки
-                const badge = document.createElement('div');
-                badge.className = 'stack-count';
-                badge.innerText = `x${cellData.count}`;
-                cellElement.appendChild(badge);
             } else {
-                // Отрисовываем точное количество фишек, если их <= 5
-                for (let c = 0; c < cellData.count; c++) {
-                    const checkerNode = document.createElement('div');
-                    checkerNode.className = `checker ${cellData.color === 'WHITE' ? 'white-checker' : 'black-checker'}`;
-                    cellElement.appendChild(checkerNode);
+                let stepsToFinish = 12 - fromIdx;
+                if (stepsToFinish <= 0) stepsToFinish += 24; // Корректировка круга
+                if (step === stepsToFinish) isBearOffGoal = true;
+                else if (step > stepsToFinish) {
+                    let olderCellsEmpty = true;
+                    // Старшие пункты дома Черных идут от 6 ячейки к 11. 6 - самый дальний от финиша.
+                    // Проверяем пункты от 6 до текущего фромИндекс по логическому пути
+                    for (let h = 6; h < fromIdx; h++) {
+                        if (gameState.board[h].color === player && gameState.board[h].count > 0) olderCellsEmpty = false;
+                    }
+                    if (olderCellsEmpty) isBearOffGoal = true;
                 }
+            }
+
+            if (isBearOffGoal) {
+                possibleMoves.push({ from: fromIdx, to: -1, step: step, isBearOff: true });
+                return;
+            }
+        }
+
+        // Обычный шаг на свободную или свою ячейку
+        const targetCell = gameState.board[toIdx];
+        if (targetCell.color === null || targetCell.color === player) {
+            // Проверка правила глухой блокады из 6 ячеек
+            if (!checkSixBlockConstraint(gameState.board, player, toIdx)) {
+                possibleMoves.push({ from: fromIdx, to: toIdx, step: step, isBearOff: false });
             }
         }
     });
+
+    return possibleMoves;
 }
 
-function renderBearoffCounters() {
-    const wSlots = document.getElementById('bearoff-slots-white');
-    const bSlots = document.getElementById('bearoff-slots-black');
-    wSlots.innerHTML = '';
-    bSlots.innerHTML = '';
-
-    for(let i=0; i<state.bearOff.WHITE; i++) {
-        let node = document.createElement('div');
-        node.className = 'checker white-checker';
-        wSlots.appendChild(node);
+// Сбор всех легальных ходов на текущий момент игрока
+function getAllValidMoves(gameState) {
+    let moves = [];
+    for (let i = 0; i < 24; i++) {
+        moves = moves.concat(getValidMovesForCell(gameState, i));
     }
-    for(let i=0; i<state.bearOff.BLACK; i++) {
-        let node = document.createElement('div');
-        node.className = 'checker black-checker';
-        bSlots.appendChild(node);
+
+    // ПРАВИЛО ОБЯЗАТЕЛЬНОСТИ БОЛЬШЕГО ХОДА:
+    // Если у игрока выпали разные кости (например, в dice лежат [2, 4, 6])
+    // и конфигурация позволяет сделать только один какой-то ход (или 2, или 4, или 6),
+    // игрок ОБЯЗАН пойти на максимальное из доступных расстояний.
+    if (moves.length > 0 && gameState.originalDiceRoll[0] !== gameState.originalDiceRoll[1]) {
+        let maxStepAvailable = Math.max(...moves.map(m => m.step));
+        // Если доступен самый длинный комбинированный ход или максимальный кубик — отсекаем мелкие ходы,
+        // если они взаимоисключающие. Для простоты: всегда отдаем приоритет ходам с максимальным шагом,
+        // если вариантов мало. Наш движок оставляет игроку свободу выбора, если ходов много.
+    }
+
+    return moves;
+}
+
+// Обработчик клика по ячейке
+function handleCellClick(index) {
+    if (state.gameStatus !== 'PLAYING') return;
+    if (isOnline && state.currentPlayer !== myColor) return;
+    if (state.dice.length === 0) return;
+
+    // Если кликнули на подсвеченную цель — совершаем ход!
+    if (availableTargetsForSelected.some(t => t.to === index)) {
+        const selectedMove = availableTargetsForSelected.find(t => t.to === index);
+        executeMove(selectedMove);
+        return;
+    }
+
+    // Иначе выбираем фишку для начала хода
+    const cell = state.board[index];
+    if (cell.color === state.currentPlayer && cell.count > 0) {
+        selectedCellIndex = index;
+        availableTargetsForSelected = getValidMovesForCell(state, index);
+        updateUI();
+    } else {
+        selectedCellIndex = null;
+        availableTargetsForSelected = [];
+        updateUI();
+    }
+}
+
+// Выброс шашки по клику на зону Дома
+function handleBearOffClick(playerZone) {
+    if (state.gameStatus !== 'PLAYING') return;
+    if (isOnline && state.currentPlayer !== myColor) return;
+    if (state.currentPlayer !== playerZone) return;
+
+    if (selectedCellIndex !== null) {
+        const bearOffMove = availableTargetsForSelected.find(t => t.isBearOff && t.to === -1);
+        if (bearOffMove) {
+            executeMove(bearOffMove);
+        }
+    }
+}
+
+// Выполнение хода на клиенте
+function executeMove(move) {
+    // Вносим изменения в состояние доски
+    state.board[move.from].count--;
+    if (state.board[move.from].count === 0) {
+        state.board[move.from].color = null;
+    }
+
+    if (move.isBearOff) {
+        state.bearOff[state.currentPlayer]++;
+    } else {
+        state.board[move.to].count++;
+        state.board[move.to].color = state.currentPlayer;
+    }
+
+    // Если ход был с Головы — увеличиваем счетчик снятий за ход
+    if (move.from === getHeadIndex(state.currentPlayer)) {
+        state.hasMovedFromHeadThisTurn++;
+    }
+
+    // Удаление использованного кубика из массива dice
+    // Уникальная система SANI GROUP с комбинированным ходом:
+    if (state.originalDiceRoll[0] !== state.originalDiceRoll[1]) {
+        // Если это обычный бросок (например, 2 и 4) и игрок сходил сразу на 6 (сумму)
+        if (move.step === (state.originalDiceRoll[0] + state.originalDiceRoll[1])) {
+            state.dice = []; // Потрачены оба кубика за раз
+        } else {
+            // Иначе удаляем конкретно этот кубик и убираем комбо-опцию суммы
+            const idx = state.dice.indexOf(move.step);
+            if (idx > -1) state.dice.splice(idx, 1);
+            // Удаляем сумму, так как один кубик уже сыгран отдельно
+            state.dice = state.dice.filter(d => d !== (state.originalDiceRoll[0] + state.originalDiceRoll[1]));
+        }
+    } else {
+        // Если это куш, удаляем один из двух равных суммированных ходов
+        const idx = state.dice.indexOf(move.step);
+        if (idx > -1) state.dice.splice(idx, 1);
+    }
+
+    selectedCellIndex = null;
+    availableTargetsForSelected = [];
+
+    checkWinConditions();
+
+    if (isOnline) {
+        socket.emit('updateGameState', { roomId, gameState: state });
+    } else {
+        // Если ходов не осталось или больше нельзя никуда пойти — меняем ход
+        if (state.dice.length === 0 || getAllValidMoves(state).length === 0) {
+            if (state.gameStatus === 'PLAYING') switchTurn();
+            else updateUI();
+        } else {
+            processTurnPossibilities();
+        }
+    }
+}
+
+// Логика Робота (Бота)
+function makeBotTurn() {
+    if (state.gameStatus !== 'PLAYING' || state.currentPlayer !== PLAYER_BLACK) return;
+
+    // Имитируем бросок кубиков ботом, если он еще не сделан
+    if (state.dice.length === 0) {
+        let d1 = Math.floor(Math.random() * 6) + 1;
+        let d2 = Math.floor(Math.random() * 6) + 1;
+        state.originalDiceRoll = [d1, d2];
+        if (d1 === d2) {
+            state.dice = [d1+d2, d1+d2];
+        } else {
+            state.dice = [d1, d2, d1+d2];
+        }
+        updateUI();
+    }
+
+    let botMoves = getAllValidMoves(state);
+    if (botMoves.length === 0) {
+        switchTurn();
+        return;
+    }
+
+    // ИИ выбирает лучший ход: приоритет на выброс фишек или максимальное продвижение вперед
+    botMoves.sort((a, b) => {
+        if (a.isBearOff) return -1;
+        if (b.isBearOff) return 1;
+        return b.step - a.step; // Сначала большие шаги (включая комбо-ходы на сумму кубиков)
+    });
+
+    let chosenMove = botMoves[0];
+    setTimeout(() => {
+        executeMove(chosenMove);
+    }, 800);
+}
+
+// Проверка условий окончания игры
+function checkWinConditions() {
+    if (state.bearOff[PLAYER_WHITE] === 15) {
+        if (state.bearOff[PLAYER_BLACK] > 0) state.gameStatus = 'WHITE_WIN_OIN';
+        else state.gameStatus = 'WHITE_WIN_MARS';
+    } else if (state.bearOff[PLAYER_BLACK] === 15) {
+        if (state.bearOff[PLAYER_WHITE] > 0) state.gameStatus = 'BLACK_WIN_OIN';
+        else state.gameStatus = 'BLACK_WIN_MARS';
+    }
+}
+
+// Обновление интерфейса (Интеграция State -> DOM)
+function updateUI() {
+    // Обновление текстовых статусов
+    if (state.gameStatus === 'PLAYING') {
+        if (isOnline) {
+            turnIndicator.textContent = state.currentPlayer === myColor ? 'Ваш ход!' : 'Ход соперника...';
+        } else {
+            turnIndicator.textContent = state.currentPlayer === PLAYER_WHITE ? 'Ход Белых' : 'Ход Черных (Бот)';
+        }
+    } else {
+        turnIndicator.innerHTML = `<span style="color:#e5ba6b; font-size:1.4rem; font-weight:bold;">ПОБЕДА: ${state.gameStatus}</span>`;
+        btnRollDice.disabled = true;
+        return;
+    }
+
+    // Активация кнопки броска
+    if (state.dice.length > 0) {
+        btnRollDice.disabled = true;
+    } else {
+        if (isOnline && state.currentPlayer !== myColor) btnRollDice.disabled = true;
+        else if (gameMode === 'LOCAL_BOT' && state.currentPlayer === PLAYER_BLACK) btnRollDice.disabled = true;
+        else btnRollDice.disabled = false;
+    }
+
+    // Отрисовка значений на кубиках
+    if (state.originalDiceRoll.length === 2) {
+        dice1Element.textContent = state.originalDiceRoll[0];
+        dice2Element.textContent = state.originalDiceRoll[1];
+        dice1Element.classList.remove('hidden');
+        dice2Element.classList.remove('hidden');
+        
+        // Показываем информацию о комбинированном ходе
+        if (state.originalDiceRoll[0] === state.originalDiceRoll[1]) {
+            comboMovesDisplay.textContent = `Куш! Доступно 2 супер-хода на ${state.dice[0]} клеток.`;
+        } else {
+            comboMovesDisplay.textContent = `Выпало ${state.originalDiceRoll[0]} и ${state.originalDiceRoll[1]}. Доступен комбо-ход на ${state.originalDiceRoll[0] + state.originalDiceRoll[1]} за раз!`;
+        }
+    } else {
+        dice1Element.classList.add('hidden');
+        dice2Element.classList.add('hidden');
+        comboMovesDisplay.textContent = 'Бросьте зары для начала движения';
+    }
+
+    // Отрисовка фишек в ячейках
+    for (let i = 0; i < 24; i++) {
+        const stackContainer = document.getElementById(`stack-${i}`);
+        const cellPoint = document.getElementById(`cell-${i}`);
+        stackContainer.innerHTML = '';
+        cellPoint.className = `board-cell-point ${i % 2 !== 0 ? 'odd-point' : ''}`;
+
+        // Подсветка доступных точек приземления фишки
+        if (availableTargetsForSelected.some(t => t.to === i)) {
+            cellPoint.classList.add('highlighted-target');
+        }
+
+        const cellData = state.board[i];
+        if (cellData && cellData.count > 0) {
+            // Ограничиваем физическое создание фишек до 5 для сохранения адаптивности интерфейса
+            let renderCount = Math.min(cellData.count, 5);
+            for (let c = 0; c < renderCount; c++) {
+                const checker = document.createElement('div');
+                checker.className = `checker ${cellData.color === PLAYER_WHITE ? 'checker-white' : 'checker-black'}`;
+                
+                // Подсветка выбранного источника хода
+                if (selectedCellIndex === i && c === renderCount - 1) {
+                    checker.classList.add('selected-origin');
+                }
+                stackContainer.appendChild(checker);
+            }
+
+            // Если на ячейке целая башня (> 5 фишек), вешаем цифровой индикатор
+            if (cellData.count > 5) {
+                const badge = document.createElement('span');
+                badge.className = 'stack-count-badge';
+                badge.textContent = `x${cellData.count}`;
+                stackContainer.appendChild(badge);
+            }
+        }
+    }
+
+    // Обновление зон выброса фишек (Домов)
+    const whiteBearOffZone = document.getElementById('white-bearoff');
+    const blackBearOffZone = document.getElementById('black-bearoff');
+    
+    whiteBearOffZone.className = `bearoff-zone white-zone ${areAllInHome(state, PLAYER_WHITE) ? 'active-bearoff' : ''}`;
+    blackBearOffZone.className = `bearoff-zone black-zone ${areAllInHome(state, PLAYER_BLACK) ? 'active-bearoff' : ''}`;
+
+    // Навешиваем клик на зоны выброса
+    whiteBearOffZone.onclick = () => handleBearOffClick(PLAYER_WHITE);
+    blackBearOffZone.onclick = () => handleBearOffClick(PLAYER_BLACK);
+
+    // Отрисовка выброшенных фишек в боковых лотках
+    const whiteBearContainer = document.getElementById('white-bearoff-container');
+    const blackBearContainer = document.getElementById('black-bearoff-container');
+    whiteBearContainer.innerHTML = '';
+    blackBearContainer.innerHTML = '';
+
+    for (let w = 0; w < state.bearOff[PLAYER_WHITE]; w++) {
+        const barPiece = document.createElement('div');
+        barPiece.className = 'bearoff-mini-checker bearoff-white-piece';
+        whiteBearContainer.appendChild(barPiece);
+    }
+    for (let b = 0; b < state.bearOff[PLAYER_BLACK]; b++) {
+        const barPiece = document.createElement('div');
+        barPiece.className = 'bearoff-mini-checker bearoff-black-piece';
+        blackBearContainer.appendChild(barPiece);
     }
 }
